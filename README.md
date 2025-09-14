@@ -17,8 +17,7 @@ Some dish descriptions and information are referenced from:
 
 Here is a sample screenshot of the application in action:
 
-![App Screenshot](static/Title.png)  
-*(Replace with your actual screenshot file, e.g., `/screenshots/demo.png`)*
+![App Screenshot](local.png)  
 
 ---
 
