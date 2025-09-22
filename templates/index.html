@@ -58,19 +58,24 @@
 
 
   </style>
-
-    <a href="{{ url_for('add') }}" class="add-btn-fixed">
-      <img src="{{ url_for('static', filename='add_button_cat.png') }}"
-           alt="Add" class="add-btn-img">
-    </a>
 </head>
 
 <body class="bg-light">
 <header class="hero-header">
   <div class="container d-flex align-items-center justify-content-between">
+    <!-- 言語切替ボタン -->
+    <div class="btn-group">
+      <button class="btn btn-sm btn-outline-light" onclick="setLang('en')">English</button>
+      <button class="btn btn-sm btn-outline-light" onclick="setLang('ja')">日本語</button>
+    </div>
 
+    <!-- ★ Addボタンはここに移動（右端） -->
+    <a href="{{ url_for('add') }}" class="add-btn-fixed">
+      <img src="{{ url_for('static', filename='add_button_cat.png') }}" alt="Add" class="add-btn-img">
+    </a>
   </div>
 </header>
+
 
 </h1>
 
@@ -98,6 +103,25 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+let lang = "en";       // デフォルト表示言語
+let lastPref = null;   // 直前にクリックした都道府県
+
+function setLang(l) {
+  lang = l;
+  // 見出しやヒントも切替（任意）
+  const t = {
+    en: { details: "Details", hint: "Click a prefecture tile to view foods on the right." },
+    ja: { details: "詳細",   hint: "地図の都道府県をクリックすると右に表示されます。" }
+  };
+  const dTitle = document.getElementById("detailsTitle");
+  const hint   = document.getElementById("mapHint");
+  if (dTitle) dTitle.textContent = t[lang].details;
+  if (hint)   hint.textContent   = t[lang].hint;
+
+  // 直前の県があれば再描画
+  if (lastPref) loadPref(lastPref);
+}
+
 async function j(u,opt){const r=await fetch(u,opt);return r.json()}
 function renderDetails(pref, items){
   const el = document.getElementById('details');
@@ -110,12 +134,17 @@ function renderDetails(pref, items){
         </div>
         <div class="col-md-7"><div class="card-body">
 <h5 class="card-title">
-  ${it.dish_en}<br>
-  ${it.dish_ja}
+  ${lang === "en" ? it.dish_en : it.dish_ja}<br>
+  ${lang === "en" ? it.prefecture_en : it.prefecture_ja}
 </h5>
           <p class="card-text mb-1"><strong>Prefecture:</strong> ${it.prefecture_en} / ${it.prefecture_ja}</p>
           <p class="card-text mb-1"><strong>Category:</strong> ${it.category_en} · <strong>Region:</strong> ${it.region}</p>
-          <p class="card-text">${it.description_en||""}</p>
+          <p class="card-text">${
+            lang === "en"
+              ? (it.description_en || "")
+              : (it.description_ja ? it.description_ja : (it.description_en || ""))
+          }</p>
+
           ${it.source?`<a href='${it.source}' target='_blank' class='link-primary'>Source</a>`:""}
           <div class="mt-2">
             ${it.id?`<a class="btn btn-sm btn-outline-secondary" href="/edit/${it.id}">Edit</a>
@@ -129,9 +158,11 @@ function renderDetails(pref, items){
   `).join("");
 }
 async function loadPref(name){
+  lastPref = name;  // ★ 選択した都道府県を記録（言語切替時に再表示するため）
   const data = await j('/api/pref?name='+encodeURIComponent(name));
   renderDetails(name, data.items||[]);
 }
+
 async function init(){
   const px = await j('/api/coords_px');
   const img = document.getElementById('japanMap');
